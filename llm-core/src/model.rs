@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
-pub struct DefaultModel {
+pub struct Model {
   inner: Arc<ModelInner>,
 }
 
@@ -20,7 +20,7 @@ pub struct ModelInner {
   description: Option<String>,
 }
 
-impl DefaultModel {
+impl Model {
   pub fn new(real_name: impl Into<String>, api_endpoint: impl Into<String>) -> Self {
     let real_name = real_name.into();
     let nick_name = real_name.clone();
@@ -35,7 +35,7 @@ impl DefaultModel {
       output_token_price: TokenPrice::Unknown,
       description: None,
     };
-    DefaultModel {
+    Model {
       inner: Arc::new(inner),
     }
   }

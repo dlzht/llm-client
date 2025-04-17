@@ -3,7 +3,7 @@ use serde::Deserialize;
 use crate::message::Message;
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Response {
+pub struct Answer {
   #[serde(flatten)]
   choices: Choices,
   model: String,

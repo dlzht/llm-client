@@ -1,34 +1,86 @@
 use reqwest::RequestBuilder;
 
 use crate::{
+  common::{SearchOptions, StreamOptions},
   message::{Message, Messages},
-  model::DefaultModel,
-  request::Request,
-  response::Response,
+  model::Model,
+  question::Question,
+  answer::Answer,
 };
 
 #[derive(Debug, Clone)]
-pub struct DefaultSessionOptions {
-  pub(crate) model: DefaultModel,
+pub struct SessionOptions {
+  pub(crate) model: Model,
+  stream_options: Option<StreamOptions>,
+  search_options: Option<SearchOptions>,
+  temperature: Option<f32>,
+  max_output_tokens: Option<i32>,
+  output_res_count: Option<i32>,
+  seed: Option<i32>,
+  stop: Option<Vec<String>>,
 }
 
-impl DefaultSessionOptions {
-  pub fn new(model_type: DefaultModel) -> Self {
-    DefaultSessionOptions { model: model_type }
+impl SessionOptions {
+  pub fn new(model: Model) -> Self {
+    SessionOptions {
+      model,
+      stream_options: None,
+      search_options: None,
+      temperature: None,
+      max_output_tokens: None,
+      output_res_count: None,
+      seed: None,
+      stop: None,
+    }
+  }
+
+  pub fn stream_options(mut self, stream_options: StreamOptions) -> Self {
+    self.stream_options = Some(stream_options);
+    self
+  }
+
+  pub fn search_options(mut self, search_options: SearchOptions) -> Self {
+    self.search_options = Some(search_options);
+    self
+  }
+
+  pub fn temperature(mut self, temperature: f32) -> Self {
+    self.temperature = Some(temperature);
+    self
+  }
+
+  pub fn max_output_tokens(mut self, max_output_tokens: i32) -> Self {
+    self.max_output_tokens = Some(max_output_tokens);
+    self
+  }
+
+  pub fn output_res_count(mut self, output_count: i32) -> Self {
+    self.output_res_count = Some(output_count);
+    self
+  }
+
+  pub fn seed(mut self, seed: i32) -> Self {
+    self.seed = Some(seed);
+    self
+  }
+
+  pub fn stop(mut self, stop: Vec<String>) -> Self {
+    self.stop = Some(stop);
+    self
   }
 }
 
 #[derive(Debug)]
-pub struct DefaultSession {
-  model: DefaultModel,
+pub struct Session {
+  options: SessionOptions,
   messages: Messages,
   request: RequestBuilder,
 }
 
-impl DefaultSession {
-  pub(crate) fn new(options: DefaultSessionOptions, request: RequestBuilder) -> Self {
-    DefaultSession {
-      model: options.model,
+impl Session {
+  pub(crate) fn new(options: SessionOptions, request: RequestBuilder) -> Self {
+    Session {
+      options,
       messages: Messages::new(),
       request,
     }
@@ -60,26 +112,30 @@ impl DefaultSession {
     self.messages.push(message);
   }
 
-  pub async fn ask_question(&mut self, question: impl Into<String>) -> Response {
+  pub async fn ask_question(&mut self, question: impl Into<String>) -> Answer {
     let message = Message::user(question);
     self.messages.push(message);
-    let payload = self.create_payload();
+    let payload = self.create_question();
     let request = self.request.try_clone().unwrap();
     let res = request
       .json(&payload)
       .send()
       .await
       .unwrap()
-      .json::<Response>()
+      .json::<Answer>()
       .await
       .unwrap();
     res
   }
 
-  fn create_payload(&self) -> Request {
-    let mut request = Request::new(self.model.real_name(), self.messages.message_ref());
-    request.max_tokens = Some(10);
-    request.stream = Some(false);
-    request
+  fn create_question(&self) -> Question {
+    Question::new(self.options.model.real_name(), self.messages.message_ref())
+      .stream_options(self.options.stream_options.as_ref())
+      .temperature(self.options.temperature)
+      .max_output_tokens(self.options.max_output_tokens)
+      .output_res_count(self.options.output_res_count)
+      .seed(self.options.seed)
+      .stop(self.options.stop.as_ref().map(|s| s.as_slice()))
+      .search_options(self.options.search_options.as_ref())
   }
 }
