@@ -1,10 +1,15 @@
-use llm_core::client::{DefaultClient, DefaultClientOptions};
-use llm_core::model::DefaultModel;
-use llm_core::session::DefaultSessionOptions;
+use llm_core::{
+  client::{DefaultClient, DefaultClientOptions},
+  model::DefaultModel,
+  session::DefaultSessionOptions,
+};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-  let model = DefaultModel::new("qwen-turbo", "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions");
+  let model = DefaultModel::new(
+    "qwen-turbo",
+    "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+  );
   let options = DefaultClientOptions::new("sk-c44f4293b3914363b4c1575019f0900b");
   let client = DefaultClient::new(options);
   let session_options = DefaultSessionOptions::new(model);

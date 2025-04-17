@@ -1,8 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 
-pub enum Error {
-
-}
+pub enum Error {}
 
 impl Debug for Error {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

@@ -1,7 +1,9 @@
-use reqwest::Client;
-use reqwest::header::CONTENT_TYPE;
-use crate::errors::Result;
-use crate::session::{DefaultSession, DefaultSessionOptions};
+use reqwest::{Client, header::CONTENT_TYPE};
+
+use crate::{
+  errors::Result,
+  session::{DefaultSession, DefaultSessionOptions},
+};
 
 #[derive(Debug, Clone)]
 pub struct DefaultClientOptions {
@@ -14,7 +16,6 @@ impl DefaultClientOptions {
       bearer_token: bearer_token.into(),
     }
   }
-
 }
 
 #[derive(Debug, Clone)]
@@ -24,7 +25,6 @@ pub struct DefaultClient {
 }
 
 impl DefaultClient {
-
   pub fn new(options: DefaultClientOptions) -> Self {
     let client = Client::new();
 
@@ -37,7 +37,9 @@ impl DefaultClient {
 
   pub fn new_session(&self, options: DefaultSessionOptions) -> Result<DefaultSession> {
     let endpoint = options.model.endpoint();
-    let request = self.http_client.post(endpoint)
+    let request = self
+      .http_client
+      .post(endpoint)
       .header(CONTENT_TYPE, "application/json")
       .bearer_auth(self.bearer_token.as_str());
     let session = DefaultSession::new(options, request);
