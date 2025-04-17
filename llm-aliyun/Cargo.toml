@@ -1,0 +1,14 @@
+[package]
+name = "llm-aliyun"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+reqwest.workspace = true
+serde.workspace = true
+
+llm-core.workspace = true

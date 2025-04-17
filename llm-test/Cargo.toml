@@ -1,0 +1,17 @@
+[package]
+name = "llm-test"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+llm-core.workspace = true
+llm-aliyun.workspace = true
+
+tokio.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true

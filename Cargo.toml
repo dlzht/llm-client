@@ -1,0 +1,33 @@
+[workspace]
+members = [
+  "llm-core",
+  "llm-aliyun",
+  "llm-test"
+]
+resolver = "3"
+
+[workspace.package]
+name = "llm-client"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[workspace.lints]
+clippy.print_stdout = "warn"
+clippy.print_stderr = "warn"
+
+[workspace.dependencies]
+llm-core = { path = "llm-core" }
+llm-aliyun = { path = "llm-aliyun" }
+
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["std"] }
+tokio = { version = "1.44", features = ["full"]}
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
