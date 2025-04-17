@@ -1,12 +1,62 @@
+use futures_util::StreamExt;
 use reqwest::RequestBuilder;
+use reqwest_eventsource::{Event, EventSource};
 
 use crate::{
-  answer::Response,
+  answer::{FluxRes, MonoRes},
   common::{SearchOptions, StreamOptions},
+  errors::{Error, Result},
   message::{Message, Messages},
   model::Model,
   question::Question,
 };
+
+pub enum Response {
+  Single(MonoRes),
+  Stream(StreamRes),
+}
+
+pub struct StreamRes {
+  eventsource: EventSource,
+}
+
+impl StreamRes {
+  pub fn new(eventsource: EventSource) -> Self {
+    Self { eventsource }
+  }
+
+  pub async fn next(&mut self) -> Option<Result<FluxRes>> {
+    loop {
+      match self.inner_next().await {
+        Some(Ok(Event::Open)) => continue,
+        Some(Ok(Event::Message(event))) => {
+          let data = event.data;
+          if "[DONE]" == data.as_str() {
+            self.eventsource.close();
+            return None;
+          }
+          let res = serde_json::from_str::<FluxRes>(&data).map_err(|e| Error::SerdeJson(e));
+          if res.is_err() {
+            self.eventsource.close();
+          }
+          return Some(res);
+        }
+        Some(Err(_)) | None => {
+          self.eventsource.close();
+          return None;
+        }
+      }
+    }
+  }
+
+  pub async fn inner_next(&mut self) -> Option<Result<Event>> {
+    self
+      .eventsource
+      .next()
+      .await
+      .map(|a| a.map_err(|e| Error::Unknown))
+  }
+}
 
 #[derive(Debug, Clone)]
 pub struct SessionOptions {
@@ -78,24 +128,6 @@ pub struct Session {
 }
 
 impl Session {
-  pub(crate) fn new(options: SessionOptions, request: RequestBuilder) -> Self {
-    Session {
-      options,
-      messages: Messages::new(),
-      request,
-    }
-  }
-
-  pub(crate) fn system_message(&mut self, message: impl Into<String>) {
-    let message = Message::system(message);
-    self.messages.push(message);
-  }
-
-  pub(crate) fn user_message(&mut self, message: impl Into<String>) {
-    let message = Message::user(message);
-    self.messages.push(message);
-  }
-
   pub fn play_as_assistant(&mut self, clear_history: bool) {
     if clear_history {
       self.messages.clear();
@@ -117,17 +149,47 @@ impl Session {
     self.messages.push(message);
     let question = self.create_question();
     println!("{}", serde_json::to_string_pretty(&question).unwrap());
-    let request = self.request.try_clone().unwrap();
+    let request = self.request.try_clone().unwrap().json(&question);
+    if self.is_stream_mode() {
+      return Response::Stream(StreamRes::new(EventSource::new(request).unwrap()));
+    }
     let res = request
-      .json(&question)
       .send()
       .await
       .unwrap()
-      // .text()
-      .json::<Response>()
+      .json::<MonoRes>()
       .await
       .unwrap();
-    res
+    Response::Single(res)
+  }
+}
+
+impl Session {
+  pub(crate) fn new(options: SessionOptions, request: RequestBuilder) -> Self {
+    Session {
+      options,
+      messages: Messages::new(),
+      request,
+    }
+  }
+
+  pub(crate) fn system_message(&mut self, message: impl Into<String>) {
+    let message = Message::system(message);
+    self.messages.push(message);
+  }
+
+  pub(crate) fn user_message(&mut self, message: impl Into<String>) {
+    let message = Message::user(message);
+    self.messages.push(message);
+  }
+
+  fn is_stream_mode(&self) -> bool {
+    self
+      .options
+      .stream_options
+      .as_ref()
+      .map(|o| o.enable_stream)
+      .unwrap_or(false)
   }
 
   fn create_question(&self) -> Question {

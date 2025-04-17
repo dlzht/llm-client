@@ -1,10 +1,16 @@
 use std::fmt::{Debug, Display, Formatter};
 
-pub enum Error {}
+pub enum Error {
+  SerdeJson(serde_json::Error),
+  Unknown,
+}
 
 impl Debug for Error {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    todo!()
+    match self {
+      Error::SerdeJson(err) => Display::fmt(err, f),
+      Error::Unknown => f.write_str("Unknown"),
+    }
   }
 }
 
