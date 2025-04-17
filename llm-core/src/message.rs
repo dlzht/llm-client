@@ -70,6 +70,14 @@ impl Messages {
         self.messages.push(message);
     }
 
+    pub fn pop(&mut self) -> Option<Message> {
+        self.messages.pop()
+    }
+
+    pub fn clear(&mut self) {
+        self.messages.clear()
+    }
+
     pub fn message_ref(&self) -> &[Message] {
         &self.messages
     }

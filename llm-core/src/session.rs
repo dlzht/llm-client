@@ -1,31 +1,63 @@
-use reqwest::{Method, RequestBuilder};
+use std::fmt::Display;
+use reqwest::{Client, Method, RequestBuilder};
+use reqwest::header::CONTENT_TYPE;
 use crate::message::{Message, Messages};
-use crate::model::Model;
+use crate::model::DefaultModel;
 use crate::request::Request;
 use crate::response::Response;
 
+#[derive(Debug, Clone)]
+pub struct DefaultSessionOptions {
+    pub(crate) model: DefaultModel,
+}
+
+impl DefaultSessionOptions {
+    pub fn new(model_type: DefaultModel) -> Self {
+        DefaultSessionOptions {
+            model: model_type,
+        }
+    }
+
+}
+
 #[derive(Debug)]
-pub struct Session {
-    model: Model,
+pub struct DefaultSession {
+    model: DefaultModel,
     messages: Messages,
     request: RequestBuilder
 }
 
-impl Session {
-    pub fn new(model: Model, request: RequestBuilder) -> Self {
-        Session {
-            model,
+impl DefaultSession {
+    pub(crate) fn new(options: DefaultSessionOptions, request: RequestBuilder) -> Self {
+        DefaultSession {
+            model: options.model,
             messages: Messages::new(),
             request
         }
     }
 
-    pub fn system_default(&mut self) {
+    pub(crate) fn system_message(&mut self, message: impl Into<String>) {
+        let message = Message::system(message);
+        self.messages.push(message);
+    }
+
+    pub(crate) fn user_message(&mut self, message: impl Into<String>) {
+        let message = Message::user(message);
+        self.messages.push(message);
+    }
+
+    pub fn play_as_assistant(&mut self, clear_history: bool) {
+        if clear_history {
+            self.messages.clear();
+        }
         let message = Message::system("You are a helpful assistant.");
         self.messages.push(message);
     }
 
-    pub fn system_message(&mut self, message: impl Into<String>) {
+    pub fn play_as(&mut self, message: impl Into<String>, clear_history: bool) {
+        if clear_history {
+            self.messages.clear();
+        }
         let message = Message::system(message);
         self.messages.push(message);
     }

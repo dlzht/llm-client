@@ -2,7 +2,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
-pub struct Model {
+pub struct DefaultModel {
     inner: Arc<ModelInner>,
 }
 
@@ -10,7 +10,7 @@ pub struct Model {
 pub struct ModelInner {
     real_name: String,
     nick_name: String,
-    llm_endpoint: String,
+    api_endpoint: String,
     max_context_length: TokenLength,
     max_input_length: TokenLength,
     max_output_length: TokenLength,
@@ -19,14 +19,14 @@ pub struct ModelInner {
     description: Option<String>,
 }
 
-impl Model {
-    pub fn new(real_name: impl Into<String>, llm_endpoint: impl Into<String>) -> Self {
+impl DefaultModel {
+    pub fn new(real_name: impl Into<String>, api_endpoint: impl Into<String>) -> Self {
         let real_name = real_name.into();
         let nick_name = real_name.clone();
         let inner = ModelInner {
             real_name,
             nick_name,
-            llm_endpoint: llm_endpoint.into(),
+            api_endpoint: api_endpoint.into(),
             max_context_length: TokenLength::Unknown,
             max_input_length: TokenLength::Unknown,
             max_output_length: TokenLength::Unknown,
@@ -34,7 +34,7 @@ impl Model {
             output_token_price: TokenPrice::Unknown,
             description: None,
         };
-        Model { inner: Arc::new(inner) }
+        DefaultModel { inner: Arc::new(inner) }
     }
 
     pub fn real_name(&self) -> &str {
@@ -42,7 +42,7 @@ impl Model {
     }
 
     pub fn endpoint(&self) -> &str {
-        &self.inner.llm_endpoint
+        &self.inner.api_endpoint
     }
 
 }
