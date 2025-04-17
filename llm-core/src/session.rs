@@ -1,11 +1,11 @@
 use reqwest::RequestBuilder;
 
 use crate::{
+  answer::Response,
   common::{SearchOptions, StreamOptions},
   message::{Message, Messages},
   model::Model,
   question::Question,
-  answer::Answer,
 };
 
 #[derive(Debug, Clone)]
@@ -112,17 +112,19 @@ impl Session {
     self.messages.push(message);
   }
 
-  pub async fn ask_question(&mut self, question: impl Into<String>) -> Answer {
+  pub async fn ask_question(&mut self, question: impl Into<String>) -> Response {
     let message = Message::user(question);
     self.messages.push(message);
-    let payload = self.create_question();
+    let question = self.create_question();
+    println!("{}", serde_json::to_string_pretty(&question).unwrap());
     let request = self.request.try_clone().unwrap();
     let res = request
-      .json(&payload)
+      .json(&question)
       .send()
       .await
       .unwrap()
-      .json::<Answer>()
+      // .text()
+      .json::<Response>()
       .await
       .unwrap();
     res

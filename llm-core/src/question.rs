@@ -10,21 +10,31 @@ pub struct Question<'a> {
   pub model: &'a str,
   pub messages: &'a [Message],
 
-  #[serde(rename = "stream")]
+  #[serde(rename = "stream", skip_serializing_if = "Option::is_none")]
   pub enable_stream: Option<bool>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub stream_options: Option<QuestionStreamOptions>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub enable_search: Option<bool>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub search_options: Option<QuestionSearchOptions>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub temperature: Option<f32>,
 
-  #[serde(rename = "max_tokens")]
+  #[serde(rename = "max_tokens", skip_serializing_if = "Option::is_none")]
   pub max_output_tokens: Option<i32>,
 
-  #[serde(rename = "n")]
+  #[serde(rename = "n", skip_serializing_if = "Option::is_none")]
   pub output_res_count: Option<i32>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub seed: Option<i32>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub stop: Option<&'a [String]>,
 }
 
