@@ -1,7 +1,4 @@
-use serde::{
-  Deserialize, Deserializer,
-  de::{DeserializeOwned, SeqAccess, Visitor},
-};
+use serde::Deserialize;
 
 use crate::message::Message;
 

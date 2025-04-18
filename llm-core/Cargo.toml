@@ -8,8 +8,9 @@ license.workspace = true
 workspace = true
 
 [dependencies]
+async-trait.workspace = true
+futures.workspace = true
 futures-util.workspace = true
-pin-project-lite.workspace = true
 reqwest.workspace = true
 reqwest-eventsource.workspace = true
 serde.workspace = true

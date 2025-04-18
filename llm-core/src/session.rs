@@ -54,7 +54,7 @@ impl StreamRes {
       .eventsource
       .next()
       .await
-      .map(|a| a.map_err(|e| Error::Unknown))
+      .map(|a| a.map_err(|_e| Error::Unknown))
   }
 }
 
@@ -148,7 +148,6 @@ impl Session {
     let message = Message::user(question);
     self.messages.push(message);
     let question = self.create_question();
-    println!("{}", serde_json::to_string_pretty(&question).unwrap());
     let request = self.request.try_clone().unwrap().json(&question);
     if self.is_stream_mode() {
       return Response::Stream(StreamRes::new(EventSource::new(request).unwrap()));
