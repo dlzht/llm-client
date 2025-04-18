@@ -7,16 +7,16 @@ use snafu::{OptionExt, ResultExt};
 
 use crate::{
   errors::{ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu, Result},
-  model::{Model, ModelInner, registry::registry::Registry},
+  model::{ModelRef, Model, registry::registry::Registry},
 };
 
 #[async_trait]
 pub trait RegistryClient {
-  async fn search(&self, name: &str) -> Result<Vec<Model>>;
+  async fn search(&self, name: &str) -> Result<Vec<ModelRef>>;
 
   async fn register(&mut self, model: Model) -> Result<()>;
 
-  async fn deregister(&mut self, model: Model) -> Result<()>;
+  async fn deregister(&mut self, model: ModelRef) -> Result<()>;
 }
 
 pub struct HttpClient {
@@ -86,14 +86,14 @@ impl<T> HttpRes<T> {
 
 #[async_trait]
 impl RegistryClient for HttpClient {
-  async fn search(&self, name: &str) -> Result<Vec<Model>> {
+  async fn search(&self, name: &str) -> Result<Vec<ModelRef>> {
     let req = self.search.try_clone().context(ImpossibleSnafu)?;
     let res = req
       .query(&[("name", name)])
       .send()
       .await
       .context(ReqwestClientSnafu)?
-      .json::<HttpRes<Vec<ModelInner>>>()
+      .json::<HttpRes<Vec<Model>>>()
       .await
       .context(ReqwestClientSnafu)?
       .unwrap_data()?
@@ -105,7 +105,7 @@ impl RegistryClient for HttpClient {
   async fn register(&mut self, model: Model) -> Result<()> {
     let req = self.register.try_clone().context(ImpossibleSnafu)?;
     let _res = req
-      .json(&model.inner())
+      .json(&model)
       .send()
       .await
       .context(ReqwestClientSnafu)?
@@ -116,10 +116,10 @@ impl RegistryClient for HttpClient {
     Ok(())
   }
 
-  async fn deregister(&mut self, model: Model) -> Result<()> {
+  async fn deregister(&mut self, model: ModelRef) -> Result<()> {
     let req = self.deregister.try_clone().context(ImpossibleSnafu)?;
     let _res = req
-      .json(&model.inner())
+      .json(model.as_ref())
       .send()
       .await
       .context(ReqwestClientSnafu)?
@@ -143,7 +143,7 @@ impl<T: RegistryClient> RemoteRegistry<T> {
 
 #[async_trait]
 impl<T: RegistryClient + Send + Sync + 'static> Registry for RemoteRegistry<T> {
-  async fn search(&self, name: &str) -> Result<Vec<Model>> {
+  async fn search(&self, name: &str) -> Result<Vec<ModelRef>> {
     self.client.search(name).await
   }
 
@@ -151,7 +151,7 @@ impl<T: RegistryClient + Send + Sync + 'static> Registry for RemoteRegistry<T> {
     self.client.register(model).await
   }
 
-  async fn deregister(&mut self, model: Model) -> Result<()> {
+  async fn deregister(&mut self, model: ModelRef) -> Result<()> {
     self.client.deregister(model).await
   }
 }

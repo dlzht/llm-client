@@ -2,13 +2,10 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
-pub struct Model {
-  inner: Arc<ModelInner>,
-}
+pub type ModelRef = Arc<Model>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct ModelInner {
+pub struct Model {
   real_name: String,
   nick_name: String,
   api_endpoint: String,
@@ -24,7 +21,7 @@ impl Model {
   pub fn new(real_name: impl Into<String>, api_endpoint: impl Into<String>) -> Self {
     let real_name = real_name.into();
     let nick_name = real_name.clone();
-    let inner = ModelInner {
+    Model {
       real_name,
       nick_name,
       api_endpoint: api_endpoint.into(),
@@ -34,29 +31,15 @@ impl Model {
       // max_output_length: TokenLength::Unknown,
       // input_token_price: TokenPrice::Unknown,
       // output_token_price: TokenPrice::Unknown,
-    };
-    Model {
-      inner: Arc::new(inner),
     }
   }
 
   pub fn real_name(&self) -> &str {
-    &self.inner.real_name
+    self.real_name.as_str()
   }
 
   pub fn endpoint(&self) -> &str {
-    &self.inner.api_endpoint
+    &self.api_endpoint.as_str()
   }
 
-  pub fn inner(&self) -> &ModelInner {
-    &self.inner
-  }
-}
-
-impl From<ModelInner> for Model {
-  fn from(value: ModelInner) -> Self {
-    Model {
-      inner: Arc::new(value),
-    }
-  }
 }

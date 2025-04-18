@@ -11,7 +11,7 @@ use crate::{
     Result,
   },
   message::{Message, Messages},
-  model::Model,
+  model::ModelRef,
   question::Question,
 };
 
@@ -64,7 +64,7 @@ impl StreamRes {
 
 #[derive(Debug, Clone)]
 pub struct SessionOptions {
-  pub(crate) model: Model,
+  pub(crate) model: ModelRef,
   stream_options: Option<StreamOptions>,
   search_options: Option<SearchOptions>,
   temperature: Option<f32>,
@@ -75,7 +75,7 @@ pub struct SessionOptions {
 }
 
 impl SessionOptions {
-  pub fn new(model: Model) -> Self {
+  pub fn new(model: ModelRef) -> Self {
     SessionOptions {
       model,
       stream_options: None,

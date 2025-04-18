@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::model::{Model, registry::registry::Registry};
+use crate::model::{ModelRef, registry::registry::Registry, Model};
 
 #[derive(Default)]
 pub struct ComposedRegistry {
@@ -24,7 +24,7 @@ impl ComposedRegistry {
 
 #[async_trait]
 impl Registry for ComposedRegistry {
-  async fn search(&self, name: &str) -> crate::errors::Result<Vec<Model>> {
+  async fn search(&self, name: &str) -> crate::errors::Result<Vec<ModelRef>> {
     todo!()
   }
 
@@ -32,7 +32,7 @@ impl Registry for ComposedRegistry {
     todo!()
   }
 
-  async fn deregister(&mut self, model: Model) -> crate::errors::Result<()> {
+  async fn deregister(&mut self, model: ModelRef) -> crate::errors::Result<()> {
     Ok(())
   }
 }
