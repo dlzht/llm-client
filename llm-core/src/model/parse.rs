@@ -30,7 +30,6 @@ impl Models {
 pub struct ModelParse;
 
 impl ModelParse {
-
   pub fn model_from_json(json: impl AsRef<str>) -> Result<Model> {
     let model = serde_json::from_str::<Model>(json.as_ref()).context(DeserializeJsonSnafu)?;
     Ok(model)
@@ -50,10 +49,7 @@ impl ModelParse {
     let models = toml::from_str::<Models>(toml.as_ref()).context(DeserializeTOMLSnafu)?;
     Ok(models.models())
   }
-
 }
-
-
 
 #[cfg(test)]
 mod test {
@@ -72,7 +68,8 @@ mod test {
 
   #[test]
   fn test_models_parse() {
-    let json = "[{\"real_name\": \"model_01\", \"api_endpoint\": \"https://endpoint.com/model_01\"}]";
+    let json =
+      "[{\"real_name\": \"model_01\", \"api_endpoint\": \"https://endpoint.com/model_01\"}]";
     let models = ModelParse::models_from_json(json);
     assert!(models.is_ok());
 
@@ -80,9 +77,9 @@ mod test {
     let models = ModelParse::models_from_json(json);
     assert!(models.is_ok());
 
-    let toml = "[[models]]\nreal_name = \"model_01\"\napi_endpoint = \"https://endpoint.com/model_01\"";
+    let toml =
+      "[[models]]\nreal_name = \"model_01\"\napi_endpoint = \"https://endpoint.com/model_01\"";
     let models = ModelParse::models_from_toml(toml);
     assert!(models.is_ok());
   }
-
 }

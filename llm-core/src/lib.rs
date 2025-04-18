@@ -6,6 +6,7 @@ pub mod client;
 pub mod common;
 #[allow(dead_code)]
 pub mod errors;
+mod http;
 #[allow(dead_code)]
 pub mod message;
 #[allow(dead_code)]

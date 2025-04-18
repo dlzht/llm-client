@@ -1,12 +1,10 @@
-use std::fmt::Debug;
-
 use async_trait::async_trait;
 use reqwest::{Client as ReqwestClient, RequestBuilder};
-use serde::Deserialize;
 use snafu::{OptionExt, ResultExt};
 
 use crate::{
-  errors::{ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu, Result},
+  errors::{ImpossibleSnafu, ReqwestClientSnafu, Result},
+  http::response::HttpRes,
   model::{Model, ModelRef, registry::registry::Registry},
 };
 
@@ -60,27 +58,6 @@ impl HttpClient {
       register,
       deregister,
     }
-  }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct HttpRes<T> {
-  code: i32,
-  message: Option<String>,
-  data: Option<T>,
-}
-
-impl<T> HttpRes<T> {
-  pub fn unwrap_data(self) -> Result<Option<T>> {
-    if self.code != 0 {
-      let message = format!(
-        "Failed to unwrap http response: {} {}",
-        self.code,
-        self.message.unwrap_or("None".to_string())
-      );
-      return Err(PlainMessageSnafu { message }.build());
-    }
-    Ok(self.data)
   }
 }
 
