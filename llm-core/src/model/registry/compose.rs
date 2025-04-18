@@ -25,13 +25,6 @@ impl ComposedRegistry {
 #[async_trait]
 impl Registry for ComposedRegistry {
   async fn search(&self, name: &str) -> crate::errors::Result<Vec<Model>> {
-    // let models = futures::stream::iter(self.registries.iter())
-    //   .map(|r| r.search(name))
-    //   .buffer_unordered(10)
-    //   .filter(|r| async { r.is_ok() })
-    //   .flatten()
-    //   .collect::<Vec<_>>();
-    // Ok(models)
     todo!()
   }
 
@@ -40,8 +33,6 @@ impl Registry for ComposedRegistry {
   }
 
   async fn deregister(&mut self, model: Model) -> crate::errors::Result<()> {
-    // let _ = futures::stream::iter(self.registries.iter())
-    //   .for_each(|mut r| r.deregister(model));
     Ok(())
   }
 }

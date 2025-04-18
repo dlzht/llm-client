@@ -6,7 +6,10 @@ use snafu::{OptionExt, ResultExt};
 use crate::{
   answer::{FluxRes, MonoRes},
   common::{SearchOptions, StreamOptions},
-  errors::{DeserializeJsonSnafu, ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu, EventsourceSnafu, Result},
+  errors::{
+    DeserializeJsonSnafu, EventsourceSnafu, ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu,
+    Result,
+  },
   message::{Message, Messages},
   model::Model,
   question::Question,

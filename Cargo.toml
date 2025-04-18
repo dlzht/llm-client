@@ -21,6 +21,7 @@ llm-core = { path = "llm-core" }
 llm-aliyun = { path = "llm-aliyun" }
 
 async-trait = "0.1"
+dashmap = "6.1"
 futures = "0.3"
 futures-util = "0.3"
 pin-project-lite = "0.2"
