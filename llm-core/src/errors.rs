@@ -1,29 +1,44 @@
-use std::fmt::{Debug, Display, Formatter};
-
-pub enum Error {
-  SerdeJson(serde_json::Error),
-  Unknown,
-}
-
-impl Debug for Error {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Error::SerdeJson(err) => Display::fmt(err, f),
-      Error::Unknown => f.write_str("Unknown"),
-    }
-  }
-}
-
-impl Display for Error {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    todo!()
-  }
-}
-
-impl std::error::Error for Error {
-  fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-    None
-  }
-}
+use snafu::{Location, Snafu};
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug, Snafu)]
+#[snafu(visibility(pub))]
+pub enum Error {
+  #[snafu(display("Failed to process http request"))]
+  ReqwestClient {
+    #[snafu(source)]
+    source: reqwest::Error,
+    #[snafu(implicit)]
+    location: Location,
+  },
+
+  #[snafu(display("Failed to process eventsource"))]
+  Eventsource {
+    source: reqwest_eventsource::Error,
+    #[snafu(implicit)]
+    location: Location,
+  },
+
+  #[snafu(display("Failed to serialize JSON"))]
+  SerializeJson {
+    #[snafu(source)]
+    source: serde_json::Error,
+    #[snafu(implicit)]
+    location: Location,
+  },
+
+  #[snafu(display("Failed to deserialize JSON"))]
+  DeserializeJson {
+    #[snafu(source)]
+    source: serde_json::Error,
+    #[snafu(implicit)]
+    location: Location,
+  },
+
+  #[snafu(display("Impossible error!"))]
+  Impossible {
+    #[snafu(implicit)]
+    location: Location,
+  },
+}
