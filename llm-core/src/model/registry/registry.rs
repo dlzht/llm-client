@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 
-use crate::{errors::Result, model::ModelRef};
-use crate::model::Model;
+use crate::{
+  errors::Result,
+  model::{Model, ModelRef},
+};
 
 #[async_trait]
 pub trait Registry {

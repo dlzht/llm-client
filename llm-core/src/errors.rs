@@ -37,6 +37,22 @@ pub enum Error {
     location: Location,
   },
 
+  #[snafu(display("Failed to serialize TOML"))]
+  SerializeTOML {
+    #[snafu(source)]
+    source: toml::ser::Error,
+    #[snafu(implicit)]
+    location: Location,
+  },
+
+  #[snafu(display("Failed to deserialize TOML"))]
+  DeserializeTOML {
+    #[snafu(source)]
+    source: toml::de::Error,
+    #[snafu(implicit)]
+    location: Location,
+  },
+
   #[snafu(display("{}", message))]
   PlainMessage {
     message: String,

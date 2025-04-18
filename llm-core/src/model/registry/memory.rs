@@ -1,12 +1,12 @@
 use std::sync::Arc;
+
 use async_trait::async_trait;
 use dashmap::DashMap;
 
 use crate::{
   errors::Result,
-  model::{ModelRef, registry::registry::Registry},
+  model::{Model, ModelRef, registry::registry::Registry},
 };
-use crate::model::Model;
 
 pub struct MemoryRegistry {
   models: DashMap<String, ModelRef>,

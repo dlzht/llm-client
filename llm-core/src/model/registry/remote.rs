@@ -7,7 +7,7 @@ use snafu::{OptionExt, ResultExt};
 
 use crate::{
   errors::{ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu, Result},
-  model::{ModelRef, Model, registry::registry::Registry},
+  model::{Model, ModelRef, registry::registry::Registry},
 };
 
 #[async_trait]

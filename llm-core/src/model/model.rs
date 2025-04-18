@@ -7,7 +7,7 @@ pub type ModelRef = Arc<Model>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Model {
   real_name: String,
-  nick_name: String,
+  nick_name: Option<String>,
   api_endpoint: String,
   description: Option<String>,
   // max_context_length: TokenLength,
@@ -19,11 +19,9 @@ pub struct Model {
 
 impl Model {
   pub fn new(real_name: impl Into<String>, api_endpoint: impl Into<String>) -> Self {
-    let real_name = real_name.into();
-    let nick_name = real_name.clone();
     Model {
-      real_name,
-      nick_name,
+      real_name: real_name.into(),
+      nick_name: None,
       api_endpoint: api_endpoint.into(),
       description: None,
       // max_context_length: TokenLength::Unknown,
@@ -41,5 +39,4 @@ impl Model {
   pub fn endpoint(&self) -> &str {
     &self.api_endpoint.as_str()
   }
-
 }

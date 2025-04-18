@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::model::{ModelRef, registry::registry::Registry, Model};
+use crate::model::{Model, ModelRef, registry::registry::Registry};
 
 #[derive(Default)]
 pub struct ComposedRegistry {
