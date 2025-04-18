@@ -1,16 +1,17 @@
 use std::fmt::Debug;
 
 use async_trait::async_trait;
-use reqwest::{Client as ReqwestClient, Client, RequestBuilder};
+use reqwest::{Client as ReqwestClient, RequestBuilder};
 use serde::Deserialize;
+use snafu::{OptionExt, ResultExt};
 
 use crate::{
-  errors::Result,
+  errors::{ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu, Result},
   model::{Model, ModelInner, registry::registry::Registry},
 };
 
 #[async_trait]
-pub trait RemoteClient {
+pub trait RegistryClient {
   async fn search(&self, name: &str) -> Result<Vec<Model>>;
 
   async fn register(&mut self, model: Model) -> Result<()>;
@@ -63,32 +64,70 @@ impl HttpClient {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct HttpRes<T: Deserialize + Debug> {
+pub struct HttpRes<T> {
   code: i32,
   message: Option<String>,
-  data: T,
+  data: Option<T>,
+}
+
+impl<T> HttpRes<T> {
+  pub fn unwrap_data(self) -> Result<Option<T>> {
+    if self.code != 0 {
+      let message = format!(
+        "Failed to unwrap http response: {} {}",
+        self.code,
+        self.message.unwrap_or("None".to_string())
+      );
+      return Err(PlainMessageSnafu { message }.build());
+    }
+    Ok(self.data)
+  }
 }
 
 #[async_trait]
-impl RemoteClient for HttpClient {
+impl RegistryClient for HttpClient {
   async fn search(&self, name: &str) -> Result<Vec<Model>> {
-    let req = self.search.try_clone().unwrap();
-    let req = req
+    let req = self.search.try_clone().context(ImpossibleSnafu)?;
+    let res = req
       .query(&[("name", name)])
       .send()
       .await
-      .unwrap()
+      .context(ReqwestClientSnafu)?
       .json::<HttpRes<Vec<ModelInner>>>()
       .await
-      .unwrap();
+      .context(ReqwestClientSnafu)?
+      .unwrap_data()?
+      .map(|ms| ms.into_iter().map(|m| m.into()).collect())
+      .unwrap_or_else(Vec::new);
+    Ok(res)
   }
 
   async fn register(&mut self, model: Model) -> Result<()> {
-    todo!()
+    let req = self.register.try_clone().context(ImpossibleSnafu)?;
+    let _res = req
+      .json(&model.inner())
+      .send()
+      .await
+      .context(ReqwestClientSnafu)?
+      .json::<HttpRes<()>>()
+      .await
+      .context(ReqwestClientSnafu)?
+      .unwrap_data()?;
+    Ok(())
   }
 
   async fn deregister(&mut self, model: Model) -> Result<()> {
-    todo!()
+    let req = self.deregister.try_clone().context(ImpossibleSnafu)?;
+    let _res = req
+      .json(&model.inner())
+      .send()
+      .await
+      .context(ReqwestClientSnafu)?
+      .json::<HttpRes<()>>()
+      .await
+      .context(ReqwestClientSnafu)?
+      .unwrap_data()?;
+    Ok(())
   }
 }
 
@@ -96,14 +135,14 @@ pub struct RemoteRegistry<T> {
   client: T,
 }
 
-impl<T: RemoteClient> RemoteRegistry<T> {
+impl<T: RegistryClient> RemoteRegistry<T> {
   pub fn new(client: T) -> Self {
     Self { client }
   }
 }
 
 #[async_trait]
-impl<T: RemoteClient + Send + Sync + 'static> Registry for RemoteRegistry<T> {
+impl<T: RegistryClient + Send + Sync + 'static> Registry for RemoteRegistry<T> {
   async fn search(&self, name: &str) -> Result<Vec<Model>> {
     self.client.search(name).await
   }

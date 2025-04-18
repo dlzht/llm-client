@@ -15,6 +15,7 @@ pub enum Error {
 
   #[snafu(display("Failed to process eventsource"))]
   Eventsource {
+    #[snafu(source)]
     source: reqwest_eventsource::Error,
     #[snafu(implicit)]
     location: Location,
@@ -32,6 +33,13 @@ pub enum Error {
   DeserializeJson {
     #[snafu(source)]
     source: serde_json::Error,
+    #[snafu(implicit)]
+    location: Location,
+  },
+
+  #[snafu(display("{}", message))]
+  PlainMessage {
+    message: String,
     #[snafu(implicit)]
     location: Location,
   },

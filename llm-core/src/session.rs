@@ -1,11 +1,12 @@
 use futures_util::StreamExt;
 use reqwest::RequestBuilder;
 use reqwest_eventsource::{Event, EventSource};
+use snafu::{OptionExt, ResultExt};
 
 use crate::{
   answer::{FluxRes, MonoRes},
   common::{SearchOptions, StreamOptions},
-  errors::{Error, Result},
+  errors::{DeserializeJsonSnafu, ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu, EventsourceSnafu, Result},
   message::{Message, Messages},
   model::Model,
   question::Question,
@@ -35,7 +36,7 @@ impl StreamRes {
             self.eventsource.close();
             return None;
           }
-          let res = serde_json::from_str::<FluxRes>(&data).map_err(|e| Error::SerdeJson(e));
+          let res = serde_json::from_str::<FluxRes>(&data).context(DeserializeJsonSnafu);
           if res.is_err() {
             self.eventsource.close();
           }
@@ -54,7 +55,7 @@ impl StreamRes {
       .eventsource
       .next()
       .await
-      .map(|a| a.map_err(|_e| Error::Unknown))
+      .map(|res| res.context(EventsourceSnafu))
   }
 }
 
@@ -144,22 +145,32 @@ impl Session {
     self.messages.push(message);
   }
 
-  pub async fn ask_question(&mut self, question: impl Into<String>) -> Response {
+  pub async fn ask_question(&mut self, question: impl Into<String>) -> Result<Response> {
     let message = Message::user(question);
     self.messages.push(message);
     let question = self.create_question();
-    let request = self.request.try_clone().unwrap().json(&question);
+    let request = self
+      .request
+      .try_clone()
+      .context(ImpossibleSnafu)?
+      .json(&question);
     if self.is_stream_mode() {
-      return Response::Stream(StreamRes::new(EventSource::new(request).unwrap()));
+      let eventsource = EventSource::new(request).map_err(|_| {
+        PlainMessageSnafu {
+          message: "Eventsource can not clone request".to_string(),
+        }
+        .build()
+      })?;
+      return Ok(Response::Stream(StreamRes::new(eventsource)));
     }
     let res = request
       .send()
       .await
-      .unwrap()
+      .context(ReqwestClientSnafu)?
       .json::<MonoRes>()
       .await
-      .unwrap();
-    Response::Single(res)
+      .context(ReqwestClientSnafu)?;
+    Ok(Response::Single(res))
   }
 }
 

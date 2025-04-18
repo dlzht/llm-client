@@ -47,4 +47,16 @@ impl Model {
   pub fn endpoint(&self) -> &str {
     &self.inner.api_endpoint
   }
+
+  pub fn inner(&self) -> &ModelInner {
+    &self.inner
+  }
+}
+
+impl From<ModelInner> for Model {
+  fn from(value: ModelInner) -> Self {
+    Model {
+      inner: Arc::new(value),
+    }
+  }
 }

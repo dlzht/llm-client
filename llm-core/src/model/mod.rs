@@ -1,5 +1,5 @@
 pub mod model;
-mod registry;
-mod token;
+pub mod registry;
+pub mod token;
 
 pub use model::*;

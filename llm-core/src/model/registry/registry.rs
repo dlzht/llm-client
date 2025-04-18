@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use futures_util::StreamExt;
 
 use crate::{errors::Result, model::Model};
 
