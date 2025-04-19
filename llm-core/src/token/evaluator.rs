@@ -10,8 +10,7 @@ pub trait TokenEvaluator {
 pub struct SimpleEvaluator;
 
 impl TokenEvaluator for SimpleEvaluator {
-  fn update(&mut self, _bytes: usize, _token: usize) {
-  }
+  fn update(&mut self, _bytes: usize, _token: usize) {}
 
   fn estimate(&self, token: usize) -> usize {
     token
@@ -22,7 +21,7 @@ impl TokenEvaluator for SimpleEvaluator {
 pub struct ProportionEvaluator {
   bytes: usize,
   token: usize,
-  ratio: f64
+  ratio: f64,
 }
 
 impl Default for ProportionEvaluator {
@@ -36,7 +35,6 @@ impl Default for ProportionEvaluator {
 }
 
 impl TokenEvaluator for ProportionEvaluator {
-
   fn update(&mut self, bytes: usize, token: usize) {
     if bytes == 0 || token == 0 {
       return;

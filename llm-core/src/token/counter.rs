@@ -1,6 +1,11 @@
-use std::ops::Add;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{
+  ops::Add,
+  sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+  },
+};
+
 use serde::{Deserialize, Serialize};
 
 pub trait TokenCounter {
