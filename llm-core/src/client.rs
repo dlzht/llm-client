@@ -1,6 +1,9 @@
 use reqwest::{Client, header::CONTENT_TYPE};
 
-use crate::session::{Session, SessionOptions};
+use crate::{
+  session::{Session, SessionOptions},
+  token::counter::ClientTokenCounter,
+};
 
 #[derive(Debug, Clone)]
 pub struct DefaultClientOptions {
@@ -19,6 +22,7 @@ impl DefaultClientOptions {
 pub struct DefaultClient {
   http_client: Client,
   bearer_token: String,
+  usage_counter: ClientTokenCounter,
 }
 
 impl DefaultClient {
@@ -28,6 +32,7 @@ impl DefaultClient {
     let res = DefaultClient {
       http_client: client,
       bearer_token: options.bearer_token,
+      usage_counter: ClientTokenCounter::default(),
     };
     res
   }
@@ -39,6 +44,6 @@ impl DefaultClient {
       .post(endpoint)
       .header(CONTENT_TYPE, "application/json")
       .bearer_auth(self.bearer_token.as_str());
-    Session::new(options, request)
+    Session::new(options, request, self.usage_counter.clone())
   }
 }

@@ -10,9 +10,10 @@ use crate::{
     DeserializeJsonSnafu, EventsourceSnafu, ImpossibleSnafu, PlainMessageSnafu, ReqwestClientSnafu,
     Result,
   },
-  message::{Message, Messages},
+  message::{Message, Messages, Role},
   model::ModelRef,
   question::Question,
+  token::counter::{ClientTokenCounter, SessionTokenCounter},
 };
 
 pub enum Response {
@@ -129,6 +130,8 @@ pub struct Session {
   options: SessionOptions,
   messages: Messages,
   request: RequestBuilder,
+  session_usage_counter: SessionTokenCounter,
+  client_usage_counter: ClientTokenCounter,
 }
 
 impl Session {
@@ -157,32 +160,26 @@ impl Session {
       .try_clone()
       .context(ImpossibleSnafu)?
       .json(&question);
+
     if self.is_stream_mode() {
-      let eventsource = EventSource::new(request).map_err(|_| {
-        PlainMessageSnafu {
-          message: "Eventsource can not clone request".to_string(),
-        }
-        .build()
-      })?;
-      return Ok(Response::Stream(StreamRes::new(eventsource)));
+      return self.process_stream_question(request);
     }
-    let res = request
-      .send()
-      .await
-      .context(ReqwestClientSnafu)?
-      .json::<MonoRes>()
-      .await
-      .context(ReqwestClientSnafu)?;
-    Ok(Response::Single(res))
+    self.process_normal_question(request).await
   }
 }
 
 impl Session {
-  pub(crate) fn new(options: SessionOptions, request: RequestBuilder) -> Self {
+  pub(crate) fn new(
+    options: SessionOptions,
+    request: RequestBuilder,
+    client_usage_counter: ClientTokenCounter,
+  ) -> Self {
     Session {
       options,
       messages: Messages::new(),
       request,
+      session_usage_counter: SessionTokenCounter::default(),
+      client_usage_counter,
     }
   }
 
@@ -214,5 +211,67 @@ impl Session {
       .seed(self.options.seed)
       .stop(self.options.stop.as_ref().map(|s| s.as_slice()))
       .search_options(self.options.search_options.as_ref())
+  }
+
+  async fn process_normal_question(&mut self, request: RequestBuilder) -> Result<Response> {
+    let res = request
+      .send()
+      .await
+      .context(ReqwestClientSnafu)?
+      .json::<MonoRes>()
+      .await
+      .context(ReqwestClientSnafu)?;
+    if let (Some((input_token, output_token)), Some(output_bytes)) =
+      (res.token_usage(), res.output_bytes())
+    {
+      let input_bytes = self
+        .last_user_message()
+        .context(ImpossibleSnafu)?
+        .content()
+        .len();
+      self.update_token_usage(input_bytes, input_token, output_bytes, output_token);
+    }
+    Ok(Response::Single(res))
+  }
+
+  fn process_stream_question(&self, request: RequestBuilder) -> Result<Response> {
+    let eventsource = EventSource::new(request).map_err(|_| {
+      PlainMessageSnafu {
+        message: "Eventsource can not clone request".to_string(),
+      }
+      .build()
+    })?;
+    Ok(Response::Stream(StreamRes::new(eventsource)))
+  }
+
+  fn update_token_usage(
+    &mut self,
+    input_bytes: usize,
+    input_token: usize,
+    output_bytes: usize,
+    output_token: usize,
+  ) {
+    self
+      .session_usage_counter
+      .incr_input(input_bytes, input_token);
+    self
+      .session_usage_counter
+      .incr_output(output_bytes, output_token);
+    self
+      .client_usage_counter
+      .incr_input(input_token, input_token);
+    self
+      .client_usage_counter
+      .incr_output(output_token, output_token);
+  }
+
+  fn last_user_message(&self) -> Option<&Message> {
+    self
+      .messages
+      .message_ref()
+      .iter()
+      .rev()
+      .filter(|m| m.role() == Role::User)
+      .next()
   }
 }

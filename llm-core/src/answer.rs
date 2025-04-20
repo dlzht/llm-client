@@ -10,7 +10,13 @@ pub struct FluxRes {
   created: i32,
   model: String,
   id: String,
-  usage: Option<FluxUsage>,
+  usage: Option<Usage>,
+}
+
+impl FluxRes {
+  pub fn token_usage(&self) -> Option<(usize, usize)> {
+    self.usage.as_ref().map(|u| u.token_usage())
+  }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -32,7 +38,7 @@ pub struct FluxDelta {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct FluxUsage {
+pub struct Usage {
   #[serde(rename = "prompt_tokens")]
   input_tokens: u32,
 
@@ -43,11 +49,33 @@ pub struct FluxUsage {
   total_token: u32,
 }
 
+impl Usage {
+  pub fn token_usage(&self) -> (usize, usize) {
+    (self.input_tokens as usize, self.output_tokens as usize)
+  }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum MonoRes {
   Success(Answer),
   Failure(Failure),
+}
+
+impl MonoRes {
+  pub fn token_usage(&self) -> Option<(usize, usize)> {
+    match self {
+      MonoRes::Success(answer) => Some(answer.token_usage()),
+      MonoRes::Failure(_) => None,
+    }
+  }
+
+  pub fn output_bytes(&self) -> Option<usize> {
+    match self {
+      MonoRes::Success(answer) => Some(answer.output_bytes()),
+      MonoRes::Failure(_) => None,
+    }
+  }
 }
 
 impl MonoRes {
@@ -63,6 +91,23 @@ pub struct Answer {
   model: String,
   id: String,
   created: u32,
+  object: String,
+  usage: Usage,
+}
+
+impl Answer {
+  pub fn token_usage(&self) -> (usize, usize) {
+    self.usage.token_usage()
+  }
+
+  pub fn output_bytes(&self) -> usize {
+    self
+      .choices
+      .choices
+      .iter()
+      .map(|c| c.message.content().len())
+      .sum()
+  }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -88,15 +133,6 @@ pub struct MonoChoice {
   message: Message,
   finish_reason: String,
   index: i32,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Usage {
-  #[serde(rename(serialize = "prompt_tokens"))]
-  input_token_length: i32,
-
-  #[serde(rename(serialize = "completion_tokens"))]
-  output_token_length: i32,
 }
 
 #[cfg(test)]

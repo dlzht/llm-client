@@ -43,6 +43,14 @@ impl Message {
       content: content.into(),
     }
   }
+
+  pub fn content(&self) -> &str {
+    &self.content
+  }
+
+  pub fn role(&self) -> Role {
+    self.role
+  }
 }
 
 #[derive(Debug, Clone, Hash, Serialize, Deserialize)]
