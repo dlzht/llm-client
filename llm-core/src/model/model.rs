@@ -18,6 +18,15 @@ pub struct Model {
 }
 
 impl Model {
+  pub fn const_new(real_name: String, api_endpoint: String) -> Self {
+    Model {
+      real_name,
+      nick_name: None,
+      api_endpoint,
+      description: None,
+    }
+  }
+
   pub fn new(real_name: impl Into<String>, api_endpoint: impl Into<String>) -> Self {
     Model {
       real_name: real_name.into(),
